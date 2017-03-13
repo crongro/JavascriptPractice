@@ -1,6 +1,12 @@
 # Commit-log Convention
 
-[`branch-name`] `Capital present-verb` . `내용`
+[`branch-name`] `Capital present-verb` . `contents`
+
+ex 1)  `[master] Create. my commit-log convention`
+
+ex 2) `[develop] Update. getting started documentation`
+
+
 
 1. 서두에 branch 표시, branch명은 영문
 2. 제목 첫 제목과 본문을 빈 행으로 분리

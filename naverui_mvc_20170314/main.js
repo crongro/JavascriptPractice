@@ -1,3 +1,6 @@
+
+
+
 (function() {
     var DOM = {
         mainArea : document.querySelector(".mainArea"),
@@ -9,7 +12,7 @@
         companyList : document.querySelector("nav").querySelector("ul").children,
     };
 
-    var url = '../data/newslist.json';
+    var url = 'data/newslist.json';
     runXHR(url);
 
     function runXHR(url) {
@@ -20,9 +23,9 @@
     }
 
     function main() {
-        var data = JSON.parse(this.responseText);
-        init(data);
-        evtn(data);
+        var dataSet = JSON.parse(this.responseText);
+        init(dataSet);
+        evtn(dataSet);
     }
 
     function init(data){
@@ -31,23 +34,22 @@
             companyName = data[i].title ;
             DOM.sideNav.insertAdjacentHTML('beforeend', "<li>"+companyName+"</li>");
         };
-        showArticleContainer(0, data[0]);
+        showArticleContainer(0, data);
     }
-
+    var index = 0;
     function evtn(data){
-        var index = 0;
+        
         for(var i=0; i<DOM.companyList.length; i++){
             DOM.companyList[i].addEventListener("click", function(evt) {
                 index = [].indexOf.call (this.parentNode.children, this);
-                showArticleContainer(index, data[index])                
+                showArticleContainer(index, data)                
 		    });
         }
 
-        var index = 0;
         DOM.rightButton.addEventListener("click", function(evt){
             index++;
             if (index > data.length-1){ index = data.length-1;}
-            showArticleContainer(index, data[index]); 
+            showArticleContainer(index, data); 
         });
 
         DOM.leftButton.addEventListener("click", function(evt){
@@ -55,61 +57,19 @@
                 index = 1;
             }
             index--;
-            showArticleContainer(index, data[index]);
+            showArticleContainer(index, data);
         });
-
-        
-        // closeButton.addEventListener("click", function(evt){
-        //     if (evt.target.tagName === "A"){
-        //         evt.target;
-        //         console.log(evt.target.parentNode);
-        //     }
-        //     console.log(evt);
-        //     index = [].indexOf.call (this.parentNode.children, this);
-            
-        //     deleteList(index, data);
-        //     //content의 해당 인덱스 번호 삭제 -> 불필요
-        //     data.splice(index,1);
-        //     showArticleContainer(index, data[index]);
-        //     //data배열의 현재 인덱스 값 삭제
-        //     //신문기사 숫자 변경하기 --> data값 삭제후 변경
-        //     readNavLength(index, data);
-        // });
-        
-
-
     }
     
-    //hwigyum written
     function deleteCompanyList(index, data){
-        //var title = data[index].title;
-        // for(i=0; i < liList.length; i++){
-        //     if(controlData === liList[i].innerText){
-        //         DOM.sideNav.removeChild(liList[i])
-        //     }
-        // }
+        DOM.sideNav.removeChild(DOM.sideNav.childNodes[index+1]);
+        setArticleContainerHTML(index, data);
     }
 
-    function readNavLength(index, data){
-        var contentLength = document.querySelector(".mainArea nav span");
-        var baseString = "<span>​<strong>​" //1​</strong>​"/4"</span>​""
-        // var baseHTML = contentLength.innerHTML;
-        baseString = baseString + (index+1) + "</strong>​/" + data.length + "</span>​"
-        contentLength.innerHTML = baseString;
-    }
 
     function showArticleContainer(index, data){
-        DOM.mainArea.querySelector("strong").innerHTML = index+1;
-        Newstemplate = document.querySelector("#newsTemplate").innerHTML;
-        Newstemplate = Newstemplate.replace("{title}", data.title);
-        Newstemplate = Newstemplate.replace("{imgurl}", data.imgurl);
-        articleHTML = '';
-        articleData = data.newslist;
-        for(var i=0; i<articleData.length; i++){
-            articleHTML += "<li>"+articleData[i]+"</li>"
-        }
-        Newstemplate = Newstemplate.replace("{newsList}", articleHTML);
-        DOM.contentBox.innerHTML = Newstemplate;
+        
+        setArticleContainerHTML(index, data);
 
         var closeButton = DOM.contentBox.querySelector('button');
         closeButton.addEventListener("click", function(evt){
@@ -117,21 +77,33 @@
             if (target.tagName === "A"){
                 target = target.parentNode;
             }
+            console.log(target);
+            companyName = DOM.companyList[index].innerHTML;
+        
             deleteCompanyList(index, data);
-
-           
-            // index = [].indexOf.call (this.parentNode.children, this);
             
-            // deleteList(index, data);
-            // //content의 해당 인덱스 번호 삭제 -> 불필요
-            // data.splice(index,1);
-            // showArticleContainer(index, data[index]);
-            // //data배열의 현재 인덱스 값 삭제
-            // //신문기사 숫자 변경하기 --> data값 삭제후 변경
-            // readNavLength(index, data);
+            
         });
-
     }
+
+    function setArticleContainerHTML(index, data){
+
+        DOM.mainArea.querySelector("strong").innerHTML = index+1;
+        companyName = DOM.companyList[index].innerHTML;
+        itemIndex = data.findIndex(x => x.title==companyName);
+
+        Newstemplate = document.querySelector("#newsTemplate").innerHTML;
+        Newstemplate = Newstemplate.replace("{title}", data[itemIndex].title);
+        Newstemplate = Newstemplate.replace("{imgurl}", data[itemIndex].imgurl);
+        articleHTML = '';
+        articleData = data[itemIndex].newslist;
+        for(var i=0; i<articleData.length; i++){
+            articleHTML += "<li>"+articleData[i]+"</li>"
+        }
+        Newstemplate = Newstemplate.replace("{newsList}", articleHTML);
+        DOM.contentBox.innerHTML = Newstemplate;
+    }
+
 
 
 

@@ -1,23 +1,3 @@
-var healthObj = {
-    name: "달리기",
-    lastTime: "PM10:12",
-    showHealth: function(){
-        console.log("오늘은"+ this.lastTime+"까지"+this.name+"하셨어요.");
-    }
-}
-
-healthObj.showHealth();
-
-function Health(name, lastTime){
-    this.name = name;
-    this.lastTime = lastTime;
-};
-
-
-Health.prototype = healthObj;
-
-
-
 (function() {
     var DOM = {
         mainArea : document.querySelector(".mainArea"),
@@ -26,8 +6,7 @@ Health.prototype = healthObj;
         contentBox : document.querySelector(".content"),
         leftButton : document.querySelector(".left"),
         rightButton : document.querySelector(".right"),
-        companyList : document.querySelector("nav > ul").children,
-        companyName: document.querySelector(".newsName")
+        companyList : document.querySelector("nav > ul").children
     };
 
     var url = 'data/newslist.json';
@@ -66,12 +45,18 @@ Health.prototype = healthObj;
         DOM.rightButton.addEventListener("click", function(evt){
             newsName = document.querySelector(".newsName").innerHTML;
             newsIndex = getNewIndexNum(newsName, data);
+            if (newsIndex === data.length-1){
+                newsIndex = -1;
+            }
             setArticleContainerHTML(newsIndex+1, data); 
         });
 
         DOM.leftButton.addEventListener("click", function(evt){
             newsName = document.querySelector(".newsName").innerHTML;
             newsIndex = getNewIndexNum(newsName, data);
+            if (newsIndex === 0){
+                newsIndex = data.length;
+            }
             setArticleContainerHTML(newsIndex-1, data);
         });
           // function showArticleContainer(index, data){
@@ -86,33 +71,42 @@ Health.prototype = healthObj;
         return itemIndex;
     }
     
-    function deleteCompanyList(index, data){
-        DOM.sideNav.removeChild(DOM.sideNav.childNodes[index+1]);
-        setArticleContainerHTML(index, data);
+    function deleteCompanyList(companyName, data){
+
+        sideNavHTML = DOM.sideNav.innerHTML;
+        sideNavHTML = sideNavHTML.replace('<li>'+companyName+'</li>', '');
+        DOM.sideNav.innerHTML = sideNavHTML;
+        setArticleContainerHTML(itemIndex, data);
+        
     }
 
     function setArticleContainerHTML(index, data){
         DOM.mainArea.querySelector("strong").innerHTML = index+1;
         companyName = DOM.companyList[index].innerHTML;
-        itemIndex = data.findIndex(x => x.title==companyName);
+        //itemIndex = data.findIndex(x => x.title==companyName);
         newsTemplate = document.querySelector("#newsTemplate").innerHTML;
         articleHTML = '';
-        articleData = data[itemIndex].newslist;
+        articleData = data[index].newslist;
         for(var i=0; i<articleData.length; i++){
             articleHTML += "<li>"+articleData[i]+"</li>"
         }
-        newsTemplate = newsTemplate.replace("{title}", data[itemIndex].title).replace("{imgurl}", data[itemIndex].imgurl).replace("{newsList}", articleHTML);
+        newsTemplate = newsTemplate.replace("{title}", data[index].title).replace("{imgurl}", data[index].imgurl).replace("{newsList}", articleHTML);
         DOM.contentBox.innerHTML = newsTemplate;
 
 
         var closeButton = DOM.contentBox.querySelector('button');
-        console.log(closeButton);
-        // closeButton.addEventListener("click", function(evt){
-        //     target = evt.target;
-        //     if (target.tagName === "A"){ target = target.parentNode; }
-        //     companyName = DOM.companyList[index].innerHTML;
-        //     deleteCompanyList(index, data); 
-        // });
+        var companyName = document.querySelector(".newsName").innerHTML;
+        closeButton.addEventListener("click", function(evt){
+            target = evt.target;
+            if (target.tagName === "A"){ target = target.parentNode; }
+        
+            // index = getNewIndexNum(companyName, data);
+            console.log(index);
+            deleteCompanyList(companyName, data);
+            
+            //companyName = DOM.companyList[index].innerHTML;
+            //deleteCompanyList(index, data); 
+        });
     }
 })();
 

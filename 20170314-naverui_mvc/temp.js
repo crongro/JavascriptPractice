@@ -1,8 +1,6 @@
-
 document.addEventListener("DOMContentLoaded", function() {
     utility.runAjax("data/newslist.json", "load", main);
 });
-
 
 
 // utility
@@ -17,15 +15,13 @@ var utility = {
     }
 }
 
-
-
  function main(){
     var json = JSON.parse(this.responseText);
     
     model.set(json);
     model.create("isSubscribe", true, json);
-
-    menuView();
+    view.init();
+    view.menu();
     headerView();
     contentView();
     
@@ -39,18 +35,6 @@ function headerView(){
 }
 
 
-function menuView(){
-    view._showSubTitleList();
-    
-    let pressName = document.querySelectorAll("nav > ul > li");
-
-    for(let i=0; i<pressName.length; i++){
-        pressName[i].addEventListener("click", function(evt) {
-            name = pressName[i].innerHTML;
-                view._showContent(name);       
-        });
-    }
-}
 
 function contentView(){
    //삭제' 
@@ -67,35 +51,41 @@ var model = {
             data[i][k] = v;
             data[i].id = i;
         }
-        data = this.set(data);
     }
 }
 
 
+var view = {
+    init : function(){
+        title = controller._getCurrentSubList()[0].title;
+        domView._showContent(title); 
+    },
+    
+    menu: function(){
+        domView._showSubTitleList();
+        let pressName = document.querySelectorAll("nav > ul > li");
 
+        for(let i=0; i<pressName.length; i++){
+            pressName[i].addEventListener("click", function(evt) {
+                title = pressName[i].innerHTML;
+                domView._showContent(title); 
+            });
+        }
+    },
 
+    header : function(){
 
-/* Model */
-// var model = {
-//     data : [],
-//     set : function(data) {
-//         this.data = data;
-//     },
-//     create: function(data) {
+    },
+
+    content: function(title){
         
-//     }
-
-// }
-// function setModel(model){
-//     controller._createNewData("isSubscribe", true, model);
-// }
-
-
-
+    }
+    
+}
 
 /* view */
-var view = {
-    makeTemplate : function(parent, childnode, k, obj) {
+var domView = {
+    makeTemplate : function(template, contentBox, k, obj) {
         contentHTML = '';
         
 
@@ -107,10 +97,8 @@ var view = {
 
 
     _showContent: function(title){
-
-       id = controller._getSelectedPageId('title', title, model.data);
-       content = controller._getSelectedPageContent(id);
-
+        id = controller._getSelectedPageId('title', title);
+        content = controller._getSelectedPageContent(id);
         
         template = document.querySelector("#newsTemplate").innerHTML;
         contentBox = document.querySelector(".content");
@@ -122,13 +110,13 @@ var view = {
         }
        
         template = template.replace("{title}", content.title)
-                                    .replace("{imgurl}", content.imgurl)
-                                    .replace("{newsList}", contentHTML);
+                           .replace("{imgurl}", content.imgurl)
+                           .replace("{newsList}", contentHTML);
         contentBox.innerHTML = template;
      },
 
      _showSubTitleList: function(){
-        obj = controller._getCurrentSubList(model.data);
+        obj = controller._getCurrentSubList();
         titleList = controller._getObjValList('title', obj);
         
         template = document.querySelector("#companyListTemplate").innerHTML;
@@ -176,14 +164,14 @@ var controller = {
         return obj.map(function (el) { return el[k]; });
     },
 
-    _getSelectedPageId: function(k, v, obj){   
-        return obj.findIndex(x => x[k]==v);
+    _getSelectedPageId: function(k, v){   
+        return model.data.findIndex(x => x[k]==v);
     },
     _getSelectedPageContent: function(num){
-        return this._filter("id", num, obj)[0];
+        return this._filter("id", num, model.data)[0];
     },
-    _getCurrentSubList: function(obj){
-         return controller._filter("isSubscribe", true, obj);
+    _getCurrentSubList: function(){
+         return controller._filter("isSubscribe", true, model.data);
     },  
 
 }

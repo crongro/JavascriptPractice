@@ -1,6 +1,8 @@
+
 document.addEventListener("DOMContentLoaded", function() {
     utility.runAjax("data/newslist.json", "load", main);
 });
+
 
 
 // utility
@@ -15,13 +17,15 @@ var utility = {
     }
 }
 
+
+
  function main(){
     var json = JSON.parse(this.responseText);
     
     model.set(json);
     model.create("isSubscribe", true, json);
-    view.init();
-    view.menu();
+    
+    menuView();
     headerView();
     contentView();
     
@@ -35,6 +39,18 @@ function headerView(){
 }
 
 
+function menuView(){
+    view._showSubTitleList();
+    
+    let pressName = document.querySelectorAll("nav > ul > li");
+
+    for(let i=0; i<pressName.length; i++){
+        pressName[i].addEventListener("click", function(evt) {
+            name = pressName[i].innerHTML;
+                view._showContent(name);       
+        });
+    }
+}
 
 function contentView(){
    //삭제' 
@@ -51,45 +67,19 @@ var model = {
             data[i][k] = v;
             data[i].id = i;
         }
+        data = this.set(data);
     }
 }
 
-
-var view = {
-    init : function(){
-        title = controller._getCurrentSubList()[0].title;
-        domView._showContent(title); 
-    },
-    
-    menu: function(){
-        domView._showSubTitleList();
-        let pressName = document.querySelectorAll("nav > ul > li");
-
-        for(let i=0; i<pressName.length; i++){
-            pressName[i].addEventListener("click", function(evt) {
-                title = pressName[i].innerHTML;
-                domView._showContent(title); 
-            });
-        }
-    },
-
-    header : function(){
-
-    },
-
-    content: function(title){
-        
-    }
-    
-}
 
 /* view */
-var domView = {
-    makeTemplate : function(template, contentBox, k, obj) {
+var view = {
+    makeTemplate : function(parent, childnode, k, obj) {
         contentHTML = '';
         
 
     },
+
     
     showPageNum: function(){
         //페이지 번호 1/2
@@ -97,27 +87,29 @@ var domView = {
 
 
     _showContent: function(title){
-        id = controller._getSelectedPageId('title', title);
-        content = controller._getSelectedPageContent(id);
+       id = controller._getSelectedPageId('title', title, model.data);
+       el = controller._getSelectedPageContent(id);
+
         
         template = document.querySelector("#newsTemplate").innerHTML;
         contentBox = document.querySelector(".content");
         contentHTML = '';
 
-        articleData = content.newslist;
+        articleData = el.newslist;
         for(var i=0; i<articleData.length; i++){
             contentHTML += "<li>"+articleData[i]+"</li>"
         }
        
-        template = template.replace("{title}", content.title)
-                           .replace("{imgurl}", content.imgurl)
-                           .replace("{newsList}", contentHTML);
+        template = template.replace("{title}", el.title)
+                                    .replace("{imgurl}", el.imgurl)
+                                    .replace("{newsList}", contentHTML);
         contentBox.innerHTML = template;
      },
 
      _showSubTitleList: function(){
-        obj = controller._getCurrentSubList();
-        titleList = controller._getObjValList('title', obj);
+
+        controller._getCurrentSubscribedList();
+        titleList = controller.title;
         
         template = document.querySelector("#companyListTemplate").innerHTML;
         container = document.querySelector(".mainArea > nav");
@@ -139,20 +131,12 @@ var domView = {
 
 // controller
 var controller = {
-    //   _createNewData: function(k, v){
-    //     for (let i=0; i<model.data.length; i++){
-    //         model.data[i][k] = v;
-    //         model.data[i].id = i; //id 추가
-    //         model.data.push(model.data[i]);
-    //     }
-    // },
-
     _changeSubStatus: function(){
-     // 클릭시 false로 바꿈
+        id = controller._getSelectedPageId('title', title, model.data);
+        el = controller._getSelectedPageContent(id);
 
     },
-
-
+    
     _filter: function(k, v, obj){
         var result = obj.filter(function (el) {
             return el[k] === v
@@ -164,14 +148,44 @@ var controller = {
         return obj.map(function (el) { return el[k]; });
     },
 
-    _getSelectedPageId: function(k, v){   
-        return model.data.findIndex(x => x[k]==v);
+    _getSelectedPageId: function(k, v, obj){   
+        return obj.findIndex(x => x[k]==v);
     },
+
     _getSelectedPageContent: function(num){
-        return this._filter("id", num, model.data)[0];
+        return this._filter("id", num, obj)[0];
     },
-    _getCurrentSubList: function(){
-         return controller._filter("isSubscribe", true, model.data);
-    },  
+
+    _getCurrentSubscribedList: function(data, title, imgurl){
+         this.data = this._filter("isSubscribe", true, model.data);
+         this.title = this._getObjValList('title', this.data);
+         this.imgurl = this._getObjValList('imgurl', this.data);
+         this.newslist = this._getObjValList('newslist', this.data);
+        //  return this.title;
+    }
+
+
+
+    
+    
+
+    
+
+
+    
 
 }
+
+// ar model = {
+//     set: function(data){
+//         this.data = data;
+//     },
+//     create: function(k, v, data){
+//         for (let i=0; i<data.length; i++){
+//             data[i][k] = v;
+//             data[i].id = i;
+//         }
+//         data = this.set(data);
+//     }
+// }
+

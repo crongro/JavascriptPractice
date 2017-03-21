@@ -66,10 +66,7 @@
 
     }
 
-    function getNewIndexNum(companyName, data){
-        itemIndex = data.findIndex(x => x.title==companyName);
-        return itemIndex;
-    }
+   
     
     function deleteCompanyList(companyName, data){
 

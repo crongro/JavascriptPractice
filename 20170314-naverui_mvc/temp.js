@@ -53,10 +53,12 @@ var uiView = {
         firstTitle = view.firstTitle
         view._showContent(firstTitle);
         let pressName = document.querySelectorAll("nav > ul > li");
-        
         for(let i=0; i<pressName.length; i++){
             pressName[i].addEventListener("click", function(evt) {
                 name = pressName[i].innerHTML;
+                item = pressName[i]
+                view._getCurrentIndex(item);
+
                 view._showContent(name);
                 uiView.content();
             });
@@ -104,8 +106,19 @@ var view = {
     },
 
     
-    _getCurrentPageIndex: function(){
-        //페이지 번호 1/2
+    _getCurrentIndex: function(child){
+        container = document.querySelector(".mainArea > nav > span");
+
+        nameParent = child.parentNode;
+        index = Array.prototype.indexOf.call(nameParent.children, child)+1;
+
+        content = container.innerHTML;
+        
+        content = content.replace("{currentPageNum}", index);
+        // container.innerHTML = content;
+        
+        // content.innerHTML = container;
+
     },
 
     _noSubscribedContent: function(){
@@ -129,12 +142,14 @@ var view = {
         template = template.replace("{title}", controller.title)
                            .replace("{imgurl}", controller.imgurl)
                            .replace("{newsList}", contentHTML);
+
         contentBox.innerHTML = template;
      },
 
      _showSubTitleList: function(){
         controller._getCurrentSubscribedList();
         titleList = controller.title;
+      
         template = document.querySelector("#companyListTemplate").innerHTML;
         container = document.querySelector(".mainArea > nav");
         contentHTML = '';
@@ -143,14 +158,16 @@ var view = {
             contentHTML += "<li>"+titleList[i]+"</li>"
         }
 
-        template = template.replace("{companyList}", contentHTML);
+        template = template.replace("{companyList}", contentHTML)
+        
+        // .replace("{currentPageNum}", titleList.length);
+
         container.innerHTML = template;
         this.firstTitle = titleList[0];
      },
 
      _changeSubStatus: function(companyName){
          controller._unscribed(companyName);
-   
      }
 
      //구독한 리스트

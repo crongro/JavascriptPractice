@@ -1,6 +1,7 @@
 
 document.addEventListener("DOMContentLoaded", function() {
     utility.runAjax("data/newslist.json", "load", main);
+    
 });
 
 
@@ -25,35 +26,57 @@ var utility = {
     model.set(json);
     model.create("isSubscribe", true, json);
     
-    menuView();
-    headerView();
-    contentView();
+    uiView.menu();
+    uiView.header();
+    // menu = document.querySelector(".mainArea > nav");
+    // menu.addEventListener("load", function() {
+    //     console.log(sdf);
+    uiView.content();
+
     
-   // console.log(controller.join(model.init,view));
+//});
+    
 
 }
 
 //각 뷰 함수에는 이벤트만 걸 예정
-function headerView(){
+var uiView = {
+    header : function(){
+        // view._getCurrentSubscribedList();
 
-}
+    },
 
+    menu: function(){
+        view._showSubTitleList();
+        
+        // show first list 
+        firstTitle = view.firstTitle
+        view._showContent(firstTitle);
+        let pressName = document.querySelectorAll("nav > ul > li");
+        
+        for(let i=0; i<pressName.length; i++){
+            pressName[i].addEventListener("click", function(evt) {
+                name = pressName[i].innerHTML;
+                view._showContent(name);
+                uiView.content();
+            });
+        }
+    },
 
-function menuView(){
-    view._showSubTitleList();
-    
-    let pressName = document.querySelectorAll("nav > ul > li");
-
-    for(let i=0; i<pressName.length; i++){
-        pressName[i].addEventListener("click", function(evt) {
-            name = pressName[i].innerHTML;
-                view._showContent(name);       
-        });
+    content: function(){
+        const subButton = document.querySelector(".content button");
+        if (subButton !== null){
+            subButton.addEventListener("click", function(evt){
+                target = evt.target;
+                if (target.tagName.toLowerCase() !== "button"){ target = target.parentNode; }
+                name = document.querySelector(".newsName").innerHTML;
+                view._changeSubStatus(name);
+                uiView.menu();
+                uiView.content();
+            });
+        }
     }
-}
 
-function contentView(){
-   //삭제' 
 }
 
 
@@ -81,36 +104,37 @@ var view = {
     },
 
     
-    showPageNum: function(){
+    _getCurrentPageIndex: function(){
         //페이지 번호 1/2
     },
 
+    _noSubscribedContent: function(){
+        contentBox = document.querySelector(".content");
+        contentBox.innerHTML = "현재 구독 중인 언론사가 없습니다";
+    },
 
-    _showContent: function(title){
-       id = controller._getSelectedPageId('title', title, model.data);
-       el = controller._getSelectedPageContent(id);
-
-        
+    _showContent: function(companyName){
+        if (companyName === undefined){
+            view._noSubscribedContent();
+            return;
+        }
+        controller._getSelectedPageContent(companyName);
         template = document.querySelector("#newsTemplate").innerHTML;
         contentBox = document.querySelector(".content");
         contentHTML = '';
-
-        articleData = el.newslist;
-        for(var i=0; i<articleData.length; i++){
-            contentHTML += "<li>"+articleData[i]+"</li>"
+    
+        for(var i=0; i<controller.newslist.length; i++){
+            contentHTML += "<li>"+controller.newslist[i]+"</li>"
         }
-       
-        template = template.replace("{title}", el.title)
-                                    .replace("{imgurl}", el.imgurl)
-                                    .replace("{newsList}", contentHTML);
+        template = template.replace("{title}", controller.title)
+                           .replace("{imgurl}", controller.imgurl)
+                           .replace("{newsList}", contentHTML);
         contentBox.innerHTML = template;
      },
 
      _showSubTitleList: function(){
-
         controller._getCurrentSubscribedList();
         titleList = controller.title;
-        
         template = document.querySelector("#companyListTemplate").innerHTML;
         container = document.querySelector(".mainArea > nav");
         contentHTML = '';
@@ -121,7 +145,13 @@ var view = {
 
         template = template.replace("{companyList}", contentHTML);
         container.innerHTML = template;
+        this.firstTitle = titleList[0];
      },
+
+     _changeSubStatus: function(companyName){
+         controller._unscribed(companyName);
+   
+     }
 
      //구독한 리스트
    
@@ -131,10 +161,10 @@ var view = {
 
 // controller
 var controller = {
-    _changeSubStatus: function(){
-        id = controller._getSelectedPageId('title', title, model.data);
-        el = controller._getSelectedPageContent(id);
-
+    //false로 바꾼다...
+    _unscribed: function(companyName){
+        data = this._getSelectedPageContent(companyName);
+        this.data.isSubscribe = false;
     },
     
     _filter: function(k, v, obj){
@@ -148,44 +178,23 @@ var controller = {
         return obj.map(function (el) { return el[k]; });
     },
 
-    _getSelectedPageId: function(k, v, obj){   
+    _getSelectedID: function(k, v, obj){   
         return obj.findIndex(x => x[k]==v);
     },
 
-    _getSelectedPageContent: function(num){
-        return this._filter("id", num, obj)[0];
+    _getSelectedPageContent: function(companyName, data, title, imgurl, newslist, id, isSubscribe){
+        this.data = this._filter("title", companyName, model.data)[0];
+        this.title = this.data.title;
+        this.imgurl = this.data.imgurl;
+        this.newslist = this.data.newslist;
+        this.id = this.data.id;
+        this.isSubscribe = this.data.isSubscribe;
     },
 
-    _getCurrentSubscribedList: function(data, title, imgurl){
+    _getCurrentSubscribedList: function(data, title, imgurl, newslist){
          this.data = this._filter("isSubscribe", true, model.data);
          this.title = this._getObjValList('title', this.data);
          this.imgurl = this._getObjValList('imgurl', this.data);
-         this.newslist = this._getObjValList('newslist', this.data);
-        //  return this.title;
+         this.newslist = this._getObjValList('newslist', this.data);    
     }
-
-
-
-    
-    
-
-    
-
-
-    
-
 }
-
-// ar model = {
-//     set: function(data){
-//         this.data = data;
-//     },
-//     create: function(k, v, data){
-//         for (let i=0; i<data.length; i++){
-//             data[i][k] = v;
-//             data[i].id = i;
-//         }
-//         data = this.set(data);
-//     }
-// }
-

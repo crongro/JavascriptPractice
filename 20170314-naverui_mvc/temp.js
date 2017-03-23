@@ -1,32 +1,26 @@
-
 document.addEventListener("DOMContentLoaded", function() {
     utility.runAjax("data/newslist.json", "load", main);
-    
 });
-
 
 function main(){
     var json = JSON.parse(this.responseText);
     model.set(json);
     model.create("isSubscribe", true, json);
-    uiView.menu();
+
+    uiView.menu();    
     uiView.header();
     uiView.content();
 }
 
-
-// utility
+/* Utility */
 var utility = {
     runAjax : function(url, listener, reqFunc){
         var oReq = new XMLHttpRequest();
         oReq.addEventListener(listener, reqFunc);
-
-        //함수실행
         oReq.open("GET", url);
         oReq.send();
     }
 }
-
 
 /* Model */
 var model = {
@@ -42,42 +36,42 @@ var model = {
     }
 }
 
-//각 뷰 함수에는 이벤트만 걸 예정
+/* uiView*/
 var uiView = {
     header : function(){
-        let leftButton = document.querySelector(".right");
-        
-        leftButton.addEventListener("click", function(evt){
-            target = evt.target;
-            if (target.tagName.toLowerCase() !== "button"){ target = target.parentNode; }
+        let buttons = document.querySelectorAll(".btn > button");
+        for(let i=0; i<buttons.length; i++){
+            tagName = buttons[i].className;
+            buttons[i].addEventListener("click", function(evt){
+                target = evt.target;
+                if (target.tagName.toLowerCase() !== "button"){ target = target.parentNode; }
+                if (target.className === 'right'){ view._moveContentPage("right"); }
+                if (target.className === 'left'){ view._moveContentPage("left"); }
+                uiView.content();
+            });
+        }
+    },
 
-            view._movePage("right");
-            
-          
-            
-        });        
-
+    init: function(){
+        view._showSubTitleList();
+        firstTitle = view.firstTitle;
+        view._showPageContent(firstTitle); 
+        view._getCurrentPageInfo();  
     },
 
     menu: function(){
-        // init
         view._showSubTitleList();
-        
-        let pressName = document.querySelectorAll("nav > ul > li");
-        let pressNum = pressName.length;
-
-        // show first page index num
-        view._getCurrentPageInfo(1);
-        
-        // show first element content
-        firstTitle = view.firstTitle
-        view._showPageContent(firstTitle);
+        view._showPageContent(view.firstTitle); 
+        view._getCurrentPageInfo();       
+       
+        let pressList = document.querySelectorAll("nav > ul > li");
+        let pressNum = pressList.length;
 
         for(let i=0; i<pressNum; i++){
-            pressName[i].addEventListener("click", function(evt) {
-                name = pressName[i].innerHTML;
+            pressList[i].addEventListener("click", function(evt) {
+                name = pressList[i].innerHTML;
                 view._showPageContent(name);
-                view._getCurrentPageInfo(name);
+                view._getCurrentPageInfo();
                 uiView.content();
             });
         }
@@ -96,36 +90,33 @@ var uiView = {
             });
         }
     }
-
 }
-
-
-
 
 /* view */
 var view = {
-    makeTemplate : function(parent, childnode, k, obj) {
-        contentHTML = '';
-    },
-
-    
-    _getCurrentPageInfo: function(companyName){
+    _getCurrentPageInfo: function(){
         const container = document.querySelector(".info_page");
         let content = container.innerHTML;
         
+        companyName = document.querySelector(".newsName");
         controller._getCurrentSubscribedList();
         titleList = controller.title;
-    
-        index = titleList.indexOf(companyName)+1
-        if (index === 0){ index = 1}
+
+        if (companyName === null){
+            index = 0;
+            totalPages = 0;
+        }
+        else {
+            index = titleList.indexOf(companyName.innerHTML)+1
+            totalPages = titleList.length;
+        }
 
         let currentPageRegex = /(<strong\b[^>]*>)[^<>]*(<\/strong>)/i;
         let totalPageRegex = /(<span\b[^>]*>)[^<>]*(<\/span>)/i;
 
         content = content.replace(currentPageRegex, "$1"+index+"$2")
-                         .replace(totalPageRegex, "$1"+titleList.length+"$2");
+                         .replace(totalPageRegex, "$1"+totalPages+"$2");
         container.innerHTML = content;
-
     },
 
     _noSubscribedContent: function(){
@@ -155,17 +146,13 @@ var view = {
      _showSubTitleList: function(){
         controller._getCurrentSubscribedList();
         titleList = controller.title;
-      
         template = document.querySelector("#companyListTemplate").innerHTML;
         container = document.querySelector(".mainArea > nav");
         contentHTML = '';
-        
-        for(var i=0; i<titleList.length; i++){
+        for(let i=0; i<titleList.length; i++){
             contentHTML += "<li>"+titleList[i]+"</li>"
         }
-
         template = template.replace("{companyList}", contentHTML)
-        
         container.innerHTML = template;
         this.firstTitle = titleList[0];
      },
@@ -174,39 +161,35 @@ var view = {
          controller._unscribed(companyName);
      },
 
-     _movePage: function(position){
+     _moveContentPage: function(position){
         let companyName = document.querySelector(".newsName").innerHTML;
         controller._getCurrentSubscribedList();
         titleList = controller.title;
-        
+        if (companyName === null){ return; }
+        index = titleList.indexOf(companyName);
         if (position === "right"){
-            index = titleList.indexOf(companyName)+1;
-            if (index === titleList.length){
-                index = 0;
-            }
+            index = index+1;
+            if (index === titleList.length){ index = 0; }
         }
 
         if (position === "left"){
-            index = titleList.indexOf(companyName)-1;
+            index = index-1;            
+            if (index < 0){
+                index = titleList.length-1;
+            }
         }
-
-       
-        
+        if (position === 'next'){
+            index = index;
+        }
         view._showPageContent(titleList[index]);
-        view._getCurrentPageInfo(titleList[index]);
-        
+        view._getCurrentPageInfo();        
      }
-
-     //구독한 리스트
-
-   
- 
 }
 
 
 // controller
 var controller = {
-    //false로 바꾼다...
+
     _unscribed: function(companyName){
         data = this._getSelectedPageContent(companyName);
         this.data.isSubscribe = false;
@@ -223,9 +206,9 @@ var controller = {
         return obj.map(function (el) { return el[k]; });
     },
 
-    _getSelectedID: function(k, v, obj){   
-        return obj.findIndex(x => x[k]==v);
-    },
+    // _getSelectedID: function(k, v, obj){   
+    //     return obj.findIndex(x => x[k]==v);
+    // },
 
     _getSelectedPageContent: function(companyName, data, title, imgurl, newslist, id, isSubscribe){
         this._getCurrentSubscribedList();

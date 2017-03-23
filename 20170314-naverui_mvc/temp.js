@@ -1,12 +1,18 @@
+/** /
+2017. 03. 23.
+Sujin Lee
+
+*/
+
 document.addEventListener("DOMContentLoaded", function() {
     utility.runAjax("data/newslist.json", "load", main);
 });
 
+/* execute */
 function main(){
-    var json = JSON.parse(this.responseText);
+    let json = JSON.parse(this.responseText);
     model.set(json);
     model.create("isSubscribe", true, json);
-
     uiView.menu();    
     uiView.header();
     uiView.content();
@@ -15,7 +21,7 @@ function main(){
 /* Utility */
 var utility = {
     runAjax : function(url, listener, reqFunc){
-        var oReq = new XMLHttpRequest();
+        let oReq = new XMLHttpRequest();
         oReq.addEventListener(listener, reqFunc);
         oReq.open("GET", url);
         oReq.send();
@@ -63,10 +69,8 @@ var uiView = {
         view._showSubTitleList();
         view._showPageContent(view.firstTitle); 
         view._getCurrentPageInfo();       
-       
         let pressList = document.querySelectorAll("nav > ul > li");
         let pressNum = pressList.length;
-
         for(let i=0; i<pressNum; i++){
             pressList[i].addEventListener("click", function(evt) {
                 name = pressList[i].innerHTML;
@@ -97,23 +101,18 @@ var view = {
     _getCurrentPageInfo: function(){
         const container = document.querySelector(".info_page");
         let content = container.innerHTML;
-        
-        companyName = document.querySelector(".newsName");
+        let companyName = document.querySelector(".newsName");
         controller._getCurrentSubscribedList();
         titleList = controller.title;
-
         if (companyName === null){
-            index = 0;
-            totalPages = 0;
+            index = 0, totalPages = 0;
         }
         else {
             index = titleList.indexOf(companyName.innerHTML)+1
             totalPages = titleList.length;
         }
-
         let currentPageRegex = /(<strong\b[^>]*>)[^<>]*(<\/strong>)/i;
         let totalPageRegex = /(<span\b[^>]*>)[^<>]*(<\/span>)/i;
-
         content = content.replace(currentPageRegex, "$1"+index+"$2")
                          .replace(totalPageRegex, "$1"+totalPages+"$2");
         container.innerHTML = content;
@@ -139,7 +138,6 @@ var view = {
         template = template.replace("{title}", controller.title)
                            .replace("{imgurl}", controller.imgurl)
                            .replace("{newsList}", contentHTML);
-
         contentBox.innerHTML = template;
      },
 
@@ -162,34 +160,26 @@ var view = {
      },
 
      _moveContentPage: function(position){
-        let companyName = document.querySelector(".newsName").innerHTML;
-        controller._getCurrentSubscribedList();
-        titleList = controller.title;
+        let companyName = document.querySelector(".newsName");
         if (companyName === null){ return; }
-        index = titleList.indexOf(companyName);
+        controller._getCurrentSubscribedList();
+        titleList = controller.title;   
+        index = titleList.indexOf(companyName.innerHTML);
         if (position === "right"){
-            index = index+1;
+            index += 1;
             if (index === titleList.length){ index = 0; }
         }
-
         if (position === "left"){
-            index = index-1;            
-            if (index < 0){
-                index = titleList.length-1;
-            }
-        }
-        if (position === 'next'){
-            index = index;
+            index -= 1;            
+            if (index < 0){index = titleList.length-1;}
         }
         view._showPageContent(titleList[index]);
         view._getCurrentPageInfo();        
      }
 }
 
-
-// controller
+/* controller */
 var controller = {
-
     _unscribed: function(companyName){
         data = this._getSelectedPageContent(companyName);
         this.data.isSubscribe = false;
@@ -205,10 +195,6 @@ var controller = {
     _getObjValList: function(k, obj){
         return obj.map(function (el) { return el[k]; });
     },
-
-    // _getSelectedID: function(k, v, obj){   
-    //     return obj.findIndex(x => x[k]==v);
-    // },
 
     _getSelectedPageContent: function(companyName, data, title, imgurl, newslist, id, isSubscribe){
         this._getCurrentSubscribedList();

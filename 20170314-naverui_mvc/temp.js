@@ -5,7 +5,7 @@ Sujin Lee
 */
 
 document.addEventListener("DOMContentLoaded", function() {
-    utility.runAjax("data/newslist.json", "load", main);
+    util.runAjax("data/newslist.json", "load", main);
 });
 
 /* execute */
@@ -19,13 +19,24 @@ function main(){
 }
 
 /* Utility */
-var utility = {
+var util = {
     runAjax : function(url, listener, reqFunc){
         let oReq = new XMLHttpRequest();
         oReq.addEventListener(listener, reqFunc);
         oReq.open("GET", url);
         oReq.send();
-    }
+    },
+    $: function(selector) {
+        return document.querySelector(selector);
+    },
+    $$: function(selector){
+        return document.querySelectorAll(selector);
+    },
+    getChildOrder: function(elChild) {
+        const elParent = elChild.parentNode;
+        let nIndex = Array.prototype.indexOf.call(elParent.children, elChild);
+        return nIndex;
+    },
 }
 
 /* Model */
@@ -45,9 +56,8 @@ var model = {
 /* uiView*/
 var uiView = {
     header : function(){
-        let buttons = document.querySelectorAll(".btn > button");
+        let buttons = util.$$(".btn > button");
         for(let i=0; i<buttons.length; i++){
-            tagName = buttons[i].className;
             buttons[i].addEventListener("click", function(evt){
                 target = evt.target;
                 if (target.tagName.toLowerCase() !== "button"){ target = target.parentNode; }
@@ -58,37 +68,32 @@ var uiView = {
         }
     },
 
-    init: function(){
-        view._showSubTitleList();
-        firstTitle = view.firstTitle;
-        view._showPageContent(firstTitle); 
-        view._getCurrentPageInfo();  
-    },
-
     menu: function(){
         view._showSubTitleList();
-        view._showPageContent(view.firstTitle); 
+        view._showPageContent(view.firstIndex); 
         view._getCurrentPageInfo();       
-        let pressList = document.querySelectorAll("nav > ul > li");
-        let pressNum = pressList.length;
-        for(let i=0; i<pressNum; i++){
-            pressList[i].addEventListener("click", function(evt) {
-                name = pressList[i].innerHTML;
-                view._showPageContent(name);
-                view._getCurrentPageInfo();
-                uiView.content();
-            });
-        }
+        util.$(".mainArea ul").addEventListener("click", function(evt) {
+            const currentOrder = util.getChildOrder(evt.target);
+            view._showPageContent(currentOrder);
+            view._getCurrentPageInfo();
+            uiView.content();
+        });
     },
 
     content: function(){
-        const subButton = document.querySelector(".content button");
+        const subButton = util.$(".content button");
         if (subButton !== null){
             subButton.addEventListener("click", function(evt){
                 target = evt.target;
                 if (target.tagName.toLowerCase() !== "button"){ target = target.parentNode; }
-                name = document.querySelector(".newsName").innerHTML;
-                view._changeSubStatus(name);
+                //index = controller._getCurrentIndex(util.$(".newsName"));
+                //console.log(index);
+                view._changeSubStatus(0);
+                
+                view._showSubTitleList();
+            
+                view._getCurrentPageInfo();
+                
                 uiView.menu();
                 uiView.content();
             });
@@ -99,9 +104,9 @@ var uiView = {
 /* view */
 var view = {
     _getCurrentPageInfo: function(){
-        const container = document.querySelector(".info_page");
-        let content = container.innerHTML;
-        let companyName = document.querySelector(".newsName");
+        const container = util.$(".info_page");
+        let sHTML = container.innerHTML;
+        let companyName = util.$(".newsName");
         controller._getCurrentSubscribedList();
         titleList = controller.title;
         if (companyName === null){
@@ -113,75 +118,77 @@ var view = {
         }
         let currentPageRegex = /(<strong\b[^>]*>)[^<>]*(<\/strong>)/i;
         let totalPageRegex = /(<span\b[^>]*>)[^<>]*(<\/span>)/i;
-        content = content.replace(currentPageRegex, "$1"+index+"$2")
-                         .replace(totalPageRegex, "$1"+totalPages+"$2");
-        container.innerHTML = content;
+        sHTML = sHTML.replace(currentPageRegex, "$1"+index+"$2")
+                     .replace(totalPageRegex, "$1"+totalPages+"$2");
+        container.innerHTML = sHTML;
     },
 
     _noSubscribedContent: function(){
-        contentBox = document.querySelector(".content");
+        contentBox = util.$(".content");
         contentBox.innerHTML = "현재 구독 중인 언론사가 없습니다";
     },
 
-    _showPageContent: function(companyName){
-        if (companyName === undefined){
-            view._noSubscribedContent();
-            return;
-        }
-        controller._getSelectedPageContent(companyName);
-        template = document.querySelector("#newsTemplate").innerHTML;
-        contentBox = document.querySelector(".content");
-        contentHTML = '';
+    _showPageContent: function(idx){
+        console.log(idx);
+      
+        controller._getSelectedPageContent(idx);
+
+        template = util.$("#newsTemplate").innerHTML;
+        contentBox = util.$(".content");
+        sHTML = '';
         for(var i=0; i<controller.newslist.length; i++){
-            contentHTML += "<li>"+controller.newslist[i]+"</li>"
+            sHTML += "<li>"+controller.newslist[i]+"</li>"
         }
         template = template.replace("{title}", controller.title)
                            .replace("{imgurl}", controller.imgurl)
-                           .replace("{newsList}", contentHTML);
+                           .replace("{newsList}", sHTML);
         contentBox.innerHTML = template;
      },
 
      _showSubTitleList: function(){
         controller._getCurrentSubscribedList();
         titleList = controller.title;
-        template = document.querySelector("#companyListTemplate").innerHTML;
-        container = document.querySelector(".mainArea > nav");
-        contentHTML = '';
+        template = util.$("#companyListTemplate").innerHTML;
+        container = util.$(".mainArea > nav");
+        sHTML = '';
         for(let i=0; i<titleList.length; i++){
-            contentHTML += "<li>"+titleList[i]+"</li>"
+            sHTML += "<li>"+titleList[i]+"</li>"
         }
-        template = template.replace("{companyList}", contentHTML)
+        template = template.replace("{companyList}", sHTML)
         container.innerHTML = template;
-        this.firstTitle = titleList[0];
+        const currentOrder = util.getChildOrder(container);
+        this.firstIndex = currentOrder;
      },
 
-     _changeSubStatus: function(companyName){
-         controller._unscribed(companyName);
+     _changeSubStatus: function(idx){
+         controller._unscribed(idx);
      },
 
      _moveContentPage: function(position){
-        let companyName = document.querySelector(".newsName");
-        if (companyName === null){ return; }
-        controller._getCurrentSubscribedList();
-        titleList = controller.title;   
-        index = titleList.indexOf(companyName.innerHTML);
+        index = controller._getCurrentIndex(util.$(".newsName"));
         if (position === "right"){
-            index += 1;
+            index ++;
             if (index === titleList.length){ index = 0; }
         }
         if (position === "left"){
-            index -= 1;            
+            index --;            
             if (index < 0){index = titleList.length-1;}
         }
-        view._showPageContent(titleList[index]);
+        view._showPageContent(index);
         view._getCurrentPageInfo();        
      }
 }
 
 /* controller */
 var controller = {
-    _unscribed: function(companyName){
-        data = this._getSelectedPageContent(companyName);
+    _getCurrentIndex: function(node){
+        this._getCurrentSubscribedList();
+        titleList = this.title;
+        idx = titleList.indexOf(node.innerHTML);
+        return idx;
+    },
+    _unscribed: function(idx){
+        data = this._getSelectedPageContent(idx);
         this.data.isSubscribe = false;
     },
     
@@ -196,9 +203,14 @@ var controller = {
         return obj.map(function (el) { return el[k]; });
     },
 
-    _getSelectedPageContent: function(companyName, data, title, imgurl, newslist, id, isSubscribe){
+    _getSelectedPageContent: function(num, data, title, imgurl, newslist, id, isSubscribe){
         this._getCurrentSubscribedList();
-        this.data = this._filter("title", companyName, this.data)[0];
+        if (this.data.length === 0){
+            view._noSubscribedContent();
+            return;
+        }
+        this.data = this.data[num];
+        
         this.title = this.data.title;
         this.imgurl = this.data.imgurl;
         this.newslist = this.data.newslist;

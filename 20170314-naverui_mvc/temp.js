@@ -5,6 +5,15 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 
+function main(){
+    var json = JSON.parse(this.responseText);
+    model.set(json);
+    model.create("isSubscribe", true, json);
+    uiView.menu();
+    uiView.header();
+    uiView.content();
+}
+
 
 // utility
 var utility = {
@@ -19,47 +28,56 @@ var utility = {
 }
 
 
-
- function main(){
-    var json = JSON.parse(this.responseText);
-    
-    model.set(json);
-    model.create("isSubscribe", true, json);
-    
-    uiView.menu();
-    uiView.header();
-    // menu = document.querySelector(".mainArea > nav");
-    // menu.addEventListener("load", function() {
-    //     console.log(sdf);
-    uiView.content();
-
-    
-//});
-    
-
+/* Model */
+var model = {
+    set: function(data){
+        this.data = data;
+    },
+    create: function(k, v, data){
+        for (let i=0; i<data.length; i++){
+            data[i][k] = v;
+            data[i].id = i;
+        }
+        data = this.set(data);
+    }
 }
 
 //각 뷰 함수에는 이벤트만 걸 예정
 var uiView = {
     header : function(){
-        // view._getCurrentSubscribedList();
+        let leftButton = document.querySelector(".right");
+        
+        leftButton.addEventListener("click", function(evt){
+            target = evt.target;
+            if (target.tagName.toLowerCase() !== "button"){ target = target.parentNode; }
+
+            view._movePage("right");
+            
+          
+            
+        });        
 
     },
 
     menu: function(){
+        // init
         view._showSubTitleList();
         
-        // show first list 
-        firstTitle = view.firstTitle
-        view._showContent(firstTitle);
         let pressName = document.querySelectorAll("nav > ul > li");
-        for(let i=0; i<pressName.length; i++){
+        let pressNum = pressName.length;
+
+        // show first page index num
+        view._getCurrentPageInfo(1);
+        
+        // show first element content
+        firstTitle = view.firstTitle
+        view._showPageContent(firstTitle);
+
+        for(let i=0; i<pressNum; i++){
             pressName[i].addEventListener("click", function(evt) {
                 name = pressName[i].innerHTML;
-                item = pressName[i]
-                view._getCurrentIndex(item);
-
-                view._showContent(name);
+                view._showPageContent(name);
+                view._getCurrentPageInfo(name);
                 uiView.content();
             });
         }
@@ -82,42 +100,31 @@ var uiView = {
 }
 
 
-/* Model */
-var model = {
-    set: function(data){
-        this.data = data;
-    },
-    create: function(k, v, data){
-        for (let i=0; i<data.length; i++){
-            data[i][k] = v;
-            data[i].id = i;
-        }
-        data = this.set(data);
-    }
-}
 
 
 /* view */
 var view = {
     makeTemplate : function(parent, childnode, k, obj) {
         contentHTML = '';
-        
-
     },
 
     
-    _getCurrentIndex: function(child){
-        container = document.querySelector(".mainArea > nav > span");
-
-        nameParent = child.parentNode;
-        index = Array.prototype.indexOf.call(nameParent.children, child)+1;
-
-        content = container.innerHTML;
+    _getCurrentPageInfo: function(companyName){
+        const container = document.querySelector(".info_page");
+        let content = container.innerHTML;
         
-        content = content.replace("{currentPageNum}", index);
-        // container.innerHTML = content;
-        
-        // content.innerHTML = container;
+        controller._getCurrentSubscribedList();
+        titleList = controller.title;
+    
+        index = titleList.indexOf(companyName)+1
+        if (index === 0){ index = 1}
+
+        let currentPageRegex = /(<strong\b[^>]*>)[^<>]*(<\/strong>)/i;
+        let totalPageRegex = /(<span\b[^>]*>)[^<>]*(<\/span>)/i;
+
+        content = content.replace(currentPageRegex, "$1"+index+"$2")
+                         .replace(totalPageRegex, "$1"+titleList.length+"$2");
+        container.innerHTML = content;
 
     },
 
@@ -126,7 +133,7 @@ var view = {
         contentBox.innerHTML = "현재 구독 중인 언론사가 없습니다";
     },
 
-    _showContent: function(companyName){
+    _showPageContent: function(companyName){
         if (companyName === undefined){
             view._noSubscribedContent();
             return;
@@ -135,7 +142,6 @@ var view = {
         template = document.querySelector("#newsTemplate").innerHTML;
         contentBox = document.querySelector(".content");
         contentHTML = '';
-    
         for(var i=0; i<controller.newslist.length; i++){
             contentHTML += "<li>"+controller.newslist[i]+"</li>"
         }
@@ -160,17 +166,39 @@ var view = {
 
         template = template.replace("{companyList}", contentHTML)
         
-        // .replace("{currentPageNum}", titleList.length);
-
         container.innerHTML = template;
         this.firstTitle = titleList[0];
      },
 
      _changeSubStatus: function(companyName){
          controller._unscribed(companyName);
+     },
+
+     _movePage: function(position){
+        let companyName = document.querySelector(".newsName").innerHTML;
+        controller._getCurrentSubscribedList();
+        titleList = controller.title;
+        
+        if (position === "right"){
+            index = titleList.indexOf(companyName)+1;
+            if (index === titleList.length){
+                index = 0;
+            }
+        }
+
+        if (position === "left"){
+            index = titleList.indexOf(companyName)-1;
+        }
+
+       
+        
+        view._showPageContent(titleList[index]);
+        view._getCurrentPageInfo(titleList[index]);
+        
      }
 
      //구독한 리스트
+
    
  
 }
@@ -185,7 +213,7 @@ var controller = {
     },
     
     _filter: function(k, v, obj){
-        var result = obj.filter(function (el) {
+        let result = obj.filter(function (el) {
             return el[k] === v
         });
         return result? result : null;
@@ -200,7 +228,8 @@ var controller = {
     },
 
     _getSelectedPageContent: function(companyName, data, title, imgurl, newslist, id, isSubscribe){
-        this.data = this._filter("title", companyName, model.data)[0];
+        this._getCurrentSubscribedList();
+        this.data = this._filter("title", companyName, this.data)[0];
         this.title = this.data.title;
         this.imgurl = this.data.imgurl;
         this.newslist = this.data.newslist;

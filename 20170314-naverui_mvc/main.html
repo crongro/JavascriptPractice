@@ -16,8 +16,8 @@
     			<li>my뉴스</li>
     		</ul>
     		<div class="btn">
-    			<div class="left"><a href="#"><</a></div>
-    			<div class="right"><a href="#">></a></div>
+    			<button class="left"><a href="#"><</a></button>
+    			<button class="right"><a href="#">></a></button>
     		</div>
     	</header>
     	<section class="mainArea">
@@ -36,7 +36,7 @@
 			<span class="newsName">{title}</span> <button class="unsubscribe"><a href="#">구독취소</a></button>
 		</h4>
 		<div class="newsList">
-			<img src={imgurl} alt="">
+			<img src={imgurl} alt="articleMainImage">
 			<ul>
 				{newsList}
 			</ul>
@@ -44,7 +44,11 @@
 	</script>
 
 	<script type="template" id="companyListTemplate">
-		<span><strong>{currentPageNum}</strong>/ {totalPageNum}</span>
+		<div class="info_page">
+			<strong class="currentPageNum"></strong>
+			<line class="txt_slash">/</line>
+			<span class="totalPageNum"></span>
+		</div>
 		<ul>
 			{companyList}
 		<ul>

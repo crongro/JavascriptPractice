@@ -13,6 +13,7 @@ function main(){
     let json = JSON.parse(this.responseText);
     model.set(json);
     model.create("isSubscribe", true, json);
+    uiView.init();
     uiView.menu();    
     uiView.header();
     uiView.content();
@@ -55,6 +56,13 @@ var model = {
 
 /* uiView*/
 var uiView = {
+
+    init: function(){
+        view._showPageContent(0); 
+        index = controller._getCurrentIndex(util.$(".newsName"));
+        console.log(index);
+    },
+
     header : function(){
         let buttons = util.$$(".btn > button");
         for(let i=0; i<buttons.length; i++){
@@ -70,8 +78,11 @@ var uiView = {
 
     menu: function(){
         view._showSubTitleList();
-        view._showPageContent(view.firstIndex); 
-        view._getCurrentPageInfo();       
+        view._getCurrentPageInfo();
+        uiView.menuEvent();   
+    },
+
+    menuEvent: function(){
         util.$(".mainArea ul").addEventListener("click", function(evt) {
             const currentOrder = util.getChildOrder(evt.target);
             view._showPageContent(currentOrder);
@@ -82,22 +93,40 @@ var uiView = {
 
     content: function(){
         const subButton = util.$(".content button");
-        if (subButton !== null){
-            subButton.addEventListener("click", function(evt){
-                target = evt.target;
-                if (target.tagName.toLowerCase() !== "button"){ target = target.parentNode; }
-                //index = controller._getCurrentIndex(util.$(".newsName"));
-                //console.log(index);
-                view._changeSubStatus(0);
-                
-                view._showSubTitleList();
+        currentIndex = controller._getCurrentIndex(util.$(".newsName"));
+        if (currentIndex === 0 && titleList.length > 0){
+            beforeIndex = titleList.length-1
             
-                view._getCurrentPageInfo();
-                
-                uiView.menu();
-                uiView.content();
-            });
         }
+        beforeIndex = currentIndex - 1
+//loc_array[loc_array.length-1]
+
+
+        // if (beforeIndex === 0){
+        //     currentIndex + 1;
+        //     console.log(currentIndex);
+        // }
+        uiView.contentEvent(currentIndex, beforeIndex);
+    },
+
+    contentEvent: function(currentIndex, beforeIndex){
+        const subButton = util.$(".content button");
+        subButton.addEventListener("click", function(evt){
+            target = evt.target;
+            if (target.tagName.toLowerCase() !== "button"){ target = target.parentNode; }
+            
+            console.log(currentIndex, beforeIndex);
+            view._changeSubStatus(currentIndex);
+            view._showPageContent(beforeIndex);
+            //view._showSubTitleList();
+        
+            view._getCurrentPageInfo();
+            
+            uiView.menu();
+            
+            uiView.content();
+        });
+       // }
     }
 }
 
@@ -129,10 +158,15 @@ var view = {
     },
 
     _showPageContent: function(idx){
-        console.log(idx);
-      
+        if (idx === -1){
+            view._noSubscribedContent();
+            return;
+        }
         controller._getSelectedPageContent(idx);
-
+        if (controller.data === 0){
+            view._noSubscribedContent();
+            return;
+        }
         template = util.$("#newsTemplate").innerHTML;
         contentBox = util.$(".content");
         sHTML = '';
@@ -149,15 +183,17 @@ var view = {
         controller._getCurrentSubscribedList();
         titleList = controller.title;
         template = util.$("#companyListTemplate").innerHTML;
-        container = util.$(".mainArea > nav");
+       
         sHTML = '';
         for(let i=0; i<titleList.length; i++){
             sHTML += "<li>"+titleList[i]+"</li>"
         }
         template = template.replace("{companyList}", sHTML)
-        container.innerHTML = template;
-        const currentOrder = util.getChildOrder(container);
-        this.firstIndex = currentOrder;
+        
+         container = util.$(".mainArea > nav");
+         container.innerHTML = template;
+        // const currentOrder = util.getChildOrder(container);
+        // this.firstIndex = currentOrder;
      },
 
      _changeSubStatus: function(idx){
@@ -205,10 +241,7 @@ var controller = {
 
     _getSelectedPageContent: function(num, data, title, imgurl, newslist, id, isSubscribe){
         this._getCurrentSubscribedList();
-        if (this.data.length === 0){
-            view._noSubscribedContent();
-            return;
-        }
+        
         this.data = this.data[num];
         
         this.title = this.data.title;
@@ -225,3 +258,7 @@ var controller = {
          this.newslist = this._getObjValList('newslist', this.data);    
     }
 }
+// if (this.data.length === 0){
+//             view._noSubscribedContent();
+//             return;
+//         }
